@@ -1,0 +1,132 @@
+# game-x-o-python
+import pygame
+import sys
+
+# الألوان
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+GRAY = (200, 200, 200)
+BLUE = (0, 0, 255)
+RED = (255, 0, 0)
+
+# أبعاد الشاشة والخطوط
+WIDTH = 600
+HEIGHT = 600
+LINE_WIDTH = 15
+BOARD_SIZE = 3
+SQUARE_SIZE = WIDTH // BOARD_SIZE # حجم المربع الواحد
+
+# تهيئة Pygame
+pygame.init()
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("XO Game")
+screen.fill(WHITE)
+
+# خطوط اللعبة
+def draw_lines():
+    # خطوط أفقية
+    pygame.draw.line(screen, BLACK, (0, SQUARE_SIZE), (WIDTH, SQUARE_SIZE), LINE_WIDTH)
+    pygame.draw.line(screen, BLACK, (0, 2 * SQUARE_SIZE), (WIDTH, 2 * SQUARE_SIZE), LINE_WIDTH)
+
+    # خطوط عمودية
+    pygame.draw.line(screen, BLACK, (SQUARE_SIZE, 0), (SQUARE_SIZE, HEIGHT), LINE_WIDTH)
+    pygame.draw.line(screen, BLACK, (2 * SQUARE_SIZE, 0), (2 * SQUARE_SIZE, HEIGHT), LINE_WIDTH)
+
+# رسم XO
+def draw_xo(row, col, player):
+    x = col * SQUARE_SIZE + SQUARE_SIZE // 2
+    y = row * SQUARE_SIZE + SQUARE_SIZE // 2
+    if player == 1:  # X
+        pygame.draw.line(screen, BLUE, (x - 50, y - 50), (x + 50, y + 50), LINE_WIDTH)
+        pygame.draw.line(screen, BLUE, (x + 50, y - 50), (x - 50, y + 50), LINE_WIDTH)
+    elif player == 2:  # O
+        pygame.draw.circle(screen, RED, (x, y), 50, LINE_WIDTH)
+
+# فحص الفوز
+def check_win(board, player):
+    # فحص الصفوف
+    for row in range(BOARD_SIZE):
+        if board[row][0] == player and board[row][1] == player and board[row][2] == player:
+            return True
+
+    # فحص الأعمدة
+    for col in range(BOARD_SIZE):
+        if board[0][col] == player and board[1][col] == player and board[2][col] == player:
+            return True
+
+    # فحص الأقطار
+    if board[0][0] == player and board[1][1] == player and board[2][2] == player:
+        return True
+    if board[0][2] == player and board[1][1] == player and board[2][0] == player:
+        return True
+
+    return False
+
+# فحص التعادل
+def check_draw(board):
+    for row in range(BOARD_SIZE):
+        for col in range(BOARD_SIZE):
+            if board[row][col] == 0:
+                return False  # يوجد مربع فارغ
+    return True  # لا يوجد مربعات فارغة، اللعبة تعادل
+
+# إعادة تعيين اللوحة
+def reset_board():
+    global board, game_over, current_player
+    board = [[0] * BOARD_SIZE for _ in range(BOARD_SIZE)] #  [[0, 0, 0], [0, 0, 0], [0, 0, 0]]
+    game_over = False
+    current_player = 1
+    screen.fill(WHITE)
+    draw_lines()
+
+# عرض رسالة الفوز أو التعادل
+def display_message(message):
+    font = pygame.font.Font(None, 72)
+    text = font.render(message, True, BLACK)
+    text_rect = text.get_rect(center=(WIDTH // 2, HEIGHT // 2))
+    screen.blit(text, text_rect)
+    pygame.display.update()
+    pygame.time.delay(3000) # عرض الرسالة لمدة 3 ثواني
+    reset_board()
+
+# تهيئة اللوحة
+board = [[0] * BOARD_SIZE for _ in range(BOARD_SIZE)]
+game_over = False
+current_player = 1 # 1 = X, 2 = O
+
+# رسم الخطوط الأولية
+draw_lines()
+
+# الحلقة الرئيسية للعبة
+while True:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            pygame.quit()
+            sys.exit()
+
+        if event.type == pygame.MOUSEBUTTONDOWN and not game_over:
+            mouseX = event.pos[0] # احداثي اكس
+            mouseY = event.pos[1] # احداثي واي
+
+            clicked_row = int(mouseY // SQUARE_SIZE)
+            clicked_col = int(mouseX // SQUARE_SIZE)
+
+            if board[clicked_row][clicked_col] == 0:  # المربع فارغ
+                board[clicked_row][clicked_col] = current_player
+                draw_xo(clicked_row, clicked_col, current_player) # رسم الرمز
+
+                if check_win(board, current_player):
+                    game_over = True
+                    message = f"Player {current_player} wins!"
+                    display_message(message)
+
+                elif check_draw(board):
+                    game_over = True
+                    message = "It's a draw!"
+                    display_message(message)
+
+                else:
+                    # تبديل اللاعبين
+                    current_player = 3 - current_player  # تبديل بين 1 و 2
+
+    pygame.display.update()
